@@ -7,6 +7,7 @@ import { GauntletEngine } from './services/GauntletEngine';
 import { TeamArena } from './components/TeamArena';
 import { RosterManager } from './components/RosterManager';
 import { JsonModal } from './components/JsonModal';
+import { Footer } from './components/Footer';
 
 export default function App() {
   const storageRef = useRef(new StorageService());
@@ -145,6 +146,8 @@ export default function App() {
           }
         />
       </main>
+
+          <Footer />
 
       <JsonModal
         isOpen={isJsonModalOpen}
