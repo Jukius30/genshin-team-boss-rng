@@ -20,7 +20,6 @@ export default function App() {
     engineRef.current = new GauntletEngine(characters, bosses);
   }
 
-  // Trigger re-render setiap kali state di dalam instance OOP berubah
   const [, setVersion] = useState(0);
   const [errorMsg, setErrorMsg] = useState('');
   const [isJsonModalOpen, setIsJsonModalOpen] = useState(false);
@@ -43,33 +42,35 @@ export default function App() {
   const engine = engineRef.current;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <header className="flex flex-wrap justify-between items-center gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
-              Genshin Impact Team & Boss Gauntlet RNG
-            </h1>
-            <p className="text-sm text-slate-400">
-              Arsitektur OOP ReactJS • Tanpa Database (LocalStorage & JSON)
-            </p>
-          </div>
-          <button
-            onClick={() => setIsJsonModalOpen(true)}
-            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sm font-semibold text-amber-400"
-          >
-            {`{ } Kelola / Export / Import JSON`}
-          </button>
-        </header>
+    <div className="min-h-screen w-full bg-[#090B10] text-[#E6E8EE] flex flex-col">
+      {/* Full-Width Sticky Top Bar */}
+      <header className="sticky top-0 z-30 w-full bg-[#090B10]/90 backdrop-blur-md border-b border-[#1E222D] px-6 lg:px-10 py-3.5 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-2.5 h-2.5 rotate-45 bg-[#D4AF37]" />
+          <h1 className="font-display text-lg sm:text-xl font-bold tracking-wider text-white">
+            TEYVAT GAUNTLET
+          </h1>
+          <span className="hidden sm:inline-block font-mono-tech text-[11px] px-2 py-0.5 rounded bg-[#141822] text-slate-400 border border-[#232836]">
+            LOCAL RNG ENGINE
+          </span>
+        </div>
 
-        {errorMsg && (
-          <div className="bg-rose-950/60 border border-rose-500/50 text-rose-200 px-4 py-3 rounded-xl text-sm">
-            ⚠️ {errorMsg}
-          </div>
-        )}
+        <button
+          onClick={() => setIsJsonModalOpen(true)}
+          className="font-mono-tech text-xs px-3.5 py-1.5 rounded-lg bg-[#141822] hover:bg-[#1C2230] border border-[#2A3142] text-[#E5C158] transition"
+        >
+          JSON DATA // IMPORT & EXPORT
+        </button>
+      </header>
 
-        {/* Arena Gacha & Gauntlet */}
+      {errorMsg && (
+        <div className="mx-6 lg:mx-10 mt-4 bg-rose-950/50 border border-rose-500/40 text-rose-200 px-4 py-2.5 rounded-lg text-xs font-mono-tech">
+          [ERROR] {errorMsg}
+        </div>
+      )}
+
+      {/* Main Full-Screen Workspace */}
+      <main className="w-full flex-1">
         <TeamArena
           engine={engine}
           onRollTeam={() => executeSafely(() => engine.rollTeam())}
@@ -95,7 +96,6 @@ export default function App() {
           }
         />
 
-        {/* Manajemen Karakter & Boss */}
         <RosterManager
           characters={engine.characters}
           bosses={engine.bosses}
@@ -144,25 +144,24 @@ export default function App() {
             })
           }
         />
+      </main>
 
-        {/* Modal JSON */}
-        <JsonModal
-          isOpen={isJsonModalOpen}
-          onClose={() => setIsJsonModalOpen(false)}
-          initialJson={storageRef.current.exportJSON(
-            engine.characters,
-            engine.bosses
-          )}
-          onImportJson={(rawJson) => {
-            const { characters, bosses } = storageRef.current.parseRawJSON(rawJson);
-            engine.characters = characters;
-            engine.bosses = bosses;
-            engine.currentTeam = [null, null, null, null];
-            engine.currentBoss = null;
-            syncAndRender();
-          }}
-        />
-      </div>
+      <JsonModal
+        isOpen={isJsonModalOpen}
+        onClose={() => setIsJsonModalOpen(false)}
+        initialJson={storageRef.current.exportJSON(
+          engine.characters,
+          engine.bosses
+        )}
+        onImportJson={(rawJson) => {
+          const { characters, bosses } = storageRef.current.parseRawJSON(rawJson);
+          engine.characters = characters;
+          engine.bosses = bosses;
+          engine.currentTeam = [null, null, null, null];
+          engine.currentBoss = null;
+          syncAndRender();
+        }}
+      />
     </div>
   );
 }

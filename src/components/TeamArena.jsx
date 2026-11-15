@@ -1,4 +1,5 @@
 import React from 'react';
+import { ELEMENT_THEMES, ElementGlyph } from '../utils/ElementTheme';
 
 export function TeamArena({
   engine,
@@ -15,163 +16,226 @@ export function TeamArena({
   const hasTeam = engine.currentTeam.some(Boolean);
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
-      {/* Filter Controls */}
-      <div className="flex flex-wrap gap-4 justify-between items-center border-b border-slate-800 pb-4">
-        <div className="flex items-center gap-2">
-          <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold">
-            Filter Karakter:
-          </span>
-          {['ALL', '5', '4'].map((val) => (
-            <button
-              key={val}
-              onClick={() => onChangeRarityFilter(val)}
-              className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
-                engine.rarityFilter === val
-                  ? 'bg-amber-500 text-slate-950 font-bold'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              {val === 'ALL' ? 'Semua (★4 & ★5)' : `Hanya ★${val}`}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold">
-            Kategori Boss:
-          </span>
-          {[
-            { id: 'ALL', label: 'Semua Boss' },
-            { id: 'map', label: 'Map (Overworld)' },
-            { id: 'domain', label: 'Domain (Weekly)' },
-          ].map((item) => (
-            <button
-              key={item.id}
-              onClick={() => onChangeBossFilter(item.id)}
-              className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
-                engine.bossCategoryFilter === item.id
-                  ? 'bg-indigo-500 text-white font-bold'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 4 Character Slots */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {engine.currentTeam.map((char, idx) => (
-          <div
-            key={idx}
-            className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between min-h-[140px]"
-          >
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-slate-500 font-mono">SLOT #{idx + 1}</span>
-              {char && (
+    <section className="w-full border-b border-[#1E222D] bg-[#0D1017]">
+      <div className="w-full px-6 lg:px-10 py-6 space-y-6">
+        {/* Top Filter & Control Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#1A1E28]">
+          {/* Character Rarity Segmented Control */}
+          <div className="flex items-center gap-3">
+            <span className="font-mono-tech text-[11px] uppercase tracking-widest text-slate-500">
+              Pool Rarity
+            </span>
+            <div className="inline-flex rounded-lg bg-[#080A0F] p-1 border border-[#1E222D]">
+              {[
+                { id: 'ALL', label: 'All (4★ & 5★)' },
+                { id: '5', label: '5★ Only' },
+                { id: '4', label: '4★ Only' },
+              ].map((opt) => (
                 <button
-                  onClick={() => onToggleLock(idx)}
-                  className={`text-xs px-2 py-0.5 rounded ${
-                    engine.lockedSlots[idx]
-                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
-                      : 'bg-slate-800 text-slate-400 hover:text-white'
+                  key={opt.id}
+                  onClick={() => onChangeRarityFilter(opt.id)}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                    engine.rarityFilter === opt.id
+                      ? 'bg-[#D4AF37] text-[#090B10] font-semibold shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
-                  {engine.lockedSlots[idx] ? '🔒 Terkunci' : '🔓 Kunci'}
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Boss Category Segmented Control */}
+          <div className="flex items-center gap-3">
+            <span className="font-mono-tech text-[11px] uppercase tracking-widest text-slate-500">
+              Encounter Type
+            </span>
+            <div className="inline-flex rounded-lg bg-[#080A0F] p-1 border border-[#1E222D]">
+              {[
+                { id: 'ALL', label: 'All Bosses' },
+                { id: 'map', label: 'Overworld' },
+                { id: 'domain', label: 'Trounce Domain' },
+              ].map((opt) => (
+                <button
+                  key={opt.id}
+                  onClick={() => onChangeBossFilter(opt.id)}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                    engine.bossCategoryFilter === opt.id
+                      ? 'bg-slate-200 text-[#090B10] font-semibold shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 4-Slot Tactical Party Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          {engine.currentTeam.map((char, idx) => {
+            const theme = char ? ELEMENT_THEMES[char.element] || ELEMENT_THEMES.Anemo : null;
+            const isLocked = engine.lockedSlots[idx];
+
+            return (
+              <div
+                key={idx}
+                className={`relative overflow-hidden rounded-xl border transition-all duration-200 min-h-[156px] p-5 flex flex-col justify-between ${
+                  char
+                    ? `bg-[#121620] ${theme.border}`
+                    : 'bg-[#0A0C12] border-dashed border-[#222736]'
+                }`}
+              >
+                {/* Subtle Elemental Top Ambient Light */}
+                {char && (
+                  <div
+                    className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${theme.glow}`}
+                  />
+                )}
+
+                {/* Slot Header */}
+                <div className="relative z-10 flex items-center justify-between">
+                  <span className="font-mono-tech text-[11px] tracking-widest text-slate-500">
+                    PARTY 0{idx + 1}
+                  </span>
+
+                  {char && (
+                    <button
+                      onClick={() => onToggleLock(idx)}
+                      title={isLocked ? 'Unlock Slot' : 'Lock Slot'}
+                      className={`px-2 py-0.5 rounded text-[11px] font-mono-tech transition border ${
+                        isLocked
+                          ? 'bg-[#D4AF37]/15 border-[#D4AF37]/50 text-[#F5D77F]'
+                          : 'bg-[#090B10]/70 border-[#252A3A] text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {isLocked ? 'LOCKED' : 'LOCK'}
+                    </button>
+                  )}
+                </div>
+
+                {/* Character Details */}
+                {char ? (
+                  <div className="relative z-10 mt-4">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <ElementGlyph element={char.element} className="w-4 h-4 shrink-0" />
+                      <span className={`font-mono-tech text-xs uppercase tracking-wider ${theme.text}`}>
+                        {char.element}
+                      </span>
+                      <span className="text-slate-600">•</span>
+                      <span
+                        className={`font-mono-tech text-xs font-semibold ${
+                          char.rarity === 5 ? 'text-[#E5C158]' : 'text-purple-400'
+                        }`}
+                      >
+                        {char.rarity}★
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-bold tracking-tight text-white truncate">
+                      {char.name}
+                    </h3>
+                  </div>
+                ) : (
+                  <div className="relative z-10 my-auto flex flex-col items-center justify-center text-center py-4">
+                    <span className="font-mono-tech text-xs uppercase tracking-widest text-slate-600">
+                      Unassigned Slot
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Encounter Target & Action Console */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-stretch">
+          {/* Target Boss Banner (7 cols) */}
+          <div className="xl:col-span-7 rounded-xl bg-[#121620] border border-[#232838] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2.5">
+                <span className="font-mono-tech text-[11px] uppercase tracking-widest text-[#D4AF37]">
+                  Target Encounter
+                </span>
+                {engine.currentBoss && (
+                  <span
+                    className={`font-mono-tech text-[10px] uppercase px-2 py-0.5 rounded border ${
+                      engine.currentBoss.type === 'domain'
+                        ? 'bg-purple-500/10 text-purple-300 border-purple-500/30'
+                        : 'bg-sky-500/10 text-sky-300 border-sky-500/30'
+                    }`}
+                  >
+                    {engine.currentBoss.type === 'domain' ? 'Trounce Domain' : 'Overworld Boss'}
+                  </span>
+                )}
+              </div>
+              <div className="font-display text-xl sm:text-2xl font-bold text-white tracking-wide">
+                {engine.currentBoss ? engine.currentBoss.name : 'Awaiting Encounter Roll'}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <button
+                onClick={onRollTeam}
+                className="px-3.5 py-2 rounded-lg bg-[#1A1F2E] hover:bg-[#232A3D] border border-[#2C3347] text-slate-200 text-xs font-semibold transition"
+              >
+                Roll Party
+              </button>
+              <button
+                onClick={onRollBoss}
+                className="px-3.5 py-2 rounded-lg bg-[#1A1F2E] hover:bg-[#232A3D] border border-[#2C3347] text-slate-200 text-xs font-semibold transition"
+              >
+                Roll Boss
+              </button>
+              <button
+                onClick={onRollBoth}
+                className="px-4 py-2 rounded-lg bg-[#D4AF37] hover:bg-[#E2BE46] text-[#090B10] text-xs font-bold tracking-wide transition shadow-sm"
+              >
+                Deploy Full RNG
+              </button>
+            </div>
+          </div>
+
+          {/* Gauntlet Outcome Resolution (5 cols) */}
+          <div className="xl:col-span-5 rounded-xl bg-[#121620] border border-[#232838] p-5 flex flex-col justify-between gap-3">
+            <div className="flex items-center justify-between">
+              <span className="font-mono-tech text-[11px] uppercase tracking-widest text-slate-400">
+                Gauntlet Resolution
+              </span>
+              {engine.undoStack.length > 0 && (
+                <button
+                  onClick={onUndo}
+                  className="font-mono-tech text-xs text-slate-400 hover:text-white underline underline-offset-4"
+                >
+                  Undo ({engine.undoStack.length})
                 </button>
               )}
             </div>
 
-            {char ? (
-              <div className="my-2">
-                <div className="text-lg font-bold text-white">{char.name}</div>
-                <div className="text-xs text-slate-400 mt-1 flex items-center gap-2">
-                  <span>{char.element}</span>
-                  <span>•</span>
-                  <span className={char.rarity === 5 ? 'text-amber-400' : 'text-purple-400'}>
-                    {'★'.repeat(char.rarity)}
-                  </span>
-                </div>
+            {hasTeam ? (
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  onClick={onDefeat}
+                  className="px-3 py-2.5 rounded-lg bg-rose-950/50 hover:bg-rose-900/60 border border-rose-500/40 text-rose-200 text-xs font-semibold transition text-center"
+                >
+                  Defeat — Eliminate & Reroll
+                </button>
+                <button
+                  onClick={onVictory}
+                  className="px-3 py-2.5 rounded-lg bg-emerald-950/60 hover:bg-emerald-900/70 border border-emerald-500/40 text-emerald-200 text-xs font-semibold transition text-center"
+                >
+                  Victory — Lock & Revive Fallen
+                </button>
               </div>
             ) : (
-              <div className="text-sm text-slate-600 italic my-auto text-center">
-                Kosong — Tekan Acak Tim
+              <div className="text-xs text-slate-500 py-2">
+                Deploy a party to record encounter victory or defeat.
               </div>
             )}
           </div>
-        ))}
-      </div>
-
-      {/* Boss Display */}
-      <div className="bg-slate-950 border border-indigo-900/50 rounded-xl p-4 flex flex-wrap justify-between items-center gap-4">
-        <div>
-          <span className="text-xs uppercase tracking-wider text-indigo-400 font-semibold">
-            Target Boss Saat Ini
-          </span>
-          <div className="text-xl font-bold text-white mt-0.5">
-            {engine.currentBoss ? engine.currentBoss.name : 'Belum ada boss dipilih'}
-          </div>
-          {engine.currentBoss && (
-            <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">
-              {engine.currentBoss.type === 'domain' ? 'Trounce Domain (Weekly)' : 'Overworld / Map Boss'}
-            </span>
-          )}
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={onRollTeam}
-            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm transition"
-          >
-            🎲 Acak Tim Saja
-          </button>
-          <button
-            onClick={onRollBoss}
-            className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition"
-          >
-            👹 Acak Boss Saja
-          </button>
-          <button
-            onClick={onRollBoth}
-            className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm transition"
-          >
-            ⚡ Acak Tim + Boss
-          </button>
         </div>
       </div>
-
-      {/* Gauntlet Battle Outcome Controls */}
-      {hasTeam && (
-        <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
-          <div className="text-sm text-slate-300">
-            <strong className="text-white">Hasil Pertarungan Gauntlet:</strong> Tentukan hasil setelah melawan boss di atas.
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={onDefeat}
-              className="px-4 py-2 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/50 text-rose-300 font-semibold text-sm transition"
-            >
-              💀 Kalah (Gugurkan Sementara & Gacha Ulang)
-            </button>
-            <button
-              onClick={onVictory}
-              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition"
-            >
-              🏆 Menang (Nonaktifkan Pemenang & Pulihkan yg Gugur)
-            </button>
-            {engine.undoStack.length > 0 && (
-              <button
-                onClick={onUndo}
-                className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm transition"
-              >
-                ↩ Undo ({engine.undoStack.length})
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
+    </section>
   );
 }
