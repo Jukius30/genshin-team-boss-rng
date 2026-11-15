@@ -7,7 +7,6 @@ export class GauntletEngine {
     this.currentBoss = null;
     this.rarityFilter = 'ALL'; // 'ALL' | '5' | '4'
     this.bossCategoryFilter = 'ALL'; // 'ALL' | 'map' | 'domain'
-    this.undoStack = [];
     this.battleLog = [];
   }
 
@@ -21,31 +20,6 @@ export class GauntletEngine {
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     return arr;
-  }
-
-  pushSnapshot(actionLabel) {
-    this.undoStack.push({
-      actionLabel,
-      characters: this.characters.map((c) => c.clone()),
-      bosses: this.bosses.map((b) => b.clone()),
-      currentTeam: this.currentTeam.map((c) => (c ? c.clone() : null)),
-      lockedSlots: [...this.lockedSlots],
-      currentBoss: this.currentBoss ? this.currentBoss.clone() : null,
-      battleLog: [...this.battleLog],
-    });
-    if (this.undoStack.length > 20) this.undoStack.shift();
-  }
-
-  undo() {
-    if (this.undoStack.length === 0) return false;
-    const prev = this.undoStack.pop();
-    this.characters = prev.characters;
-    this.bosses = prev.bosses;
-    this.currentTeam = prev.currentTeam;
-    this.lockedSlots = prev.lockedSlots;
-    this.currentBoss = prev.currentBoss;
-    this.battleLog = prev.battleLog;
-    return true;
   }
 
   rollTeam() {
@@ -80,7 +54,7 @@ export class GauntletEngine {
       b.isEligible(this.bossCategoryFilter)
     );
     if (eligibleBosses.length === 0) {
-      throw new Error('Tidak ada boss aktif pada kategori yang dipilih.');
+      throw new Error('Tidak ada boss aktif yang tersisa pada kategori ini.');
     }
     const shuffled = GauntletEngine.shuffle(eligibleBosses);
     this.currentBoss = shuffled[0];
@@ -95,15 +69,13 @@ export class GauntletEngine {
    * Kalah Lawan Boss:
    * - Boss tetap sama
    * - 4 karakter aktif digugurkan sementara ('fallen')
-   * - Langsung gacha ulang 4 karakter dari sisa karakter 'ready'
+   * - Mencatat ke Battle Log & langsung gacha ulang 4 karakter baru
    */
   handleDefeat() {
     const activeMembers = this.currentTeam.filter(Boolean);
     if (activeMembers.length === 0) {
       throw new Error('Belum ada tim yang diacak.');
     }
-
-    this.pushSnapshot('Kalah Lawan Boss');
 
     const activeIds = new Set(activeMembers.map((c) => c.id));
     this.characters.forEach((char) => {
@@ -112,30 +84,35 @@ export class GauntletEngine {
       }
     });
 
-    this.lockedSlots = [false, false, false, false];
     this.battleLog.unshift({
+      id: `log_${Date.now()}`,
       type: 'DEFEAT',
-      bossName: this.currentBoss?.name || 'Unknown Boss',
-      teamNames: activeMembers.map((c) => c.name),
-      time: new Date().toLocaleTimeString(),
+      bossName: this.currentBoss?.name || 'No Target Boss',
+      bossType: this.currentBoss?.type || null,
+      team: activeMembers.map((c) => ({
+        name: c.name,
+        element: c.element,
+        rarity: c.rarity,
+      })),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
     });
 
-    // Otomatis gacha ulang tim baru untuk melawan boss yang sama
+    this.lockedSlots = [false, false, false, false];
     this.rollTeam();
   }
 
   /**
    * Menang Lawan Boss:
-   * - 4 karakter terakhir yang menang dinonaktifkan permanen di sesi ini ('won')
+   * - 4 karakter pemenang dikunci ('won')
    * - Semua karakter yang gugur sementara ('fallen') pulih kembali ('ready')
+   * - Boss yang dikalahkan ditandai 'defeated'
+   * - Mencatat ke Battle Log
    */
   handleVictory() {
     const activeMembers = this.currentTeam.filter(Boolean);
     if (activeMembers.length === 0) {
       throw new Error('Belum ada tim yang diacak.');
     }
-
-    this.pushSnapshot('Menang Lawan Boss');
 
     const winnerIds = new Set(activeMembers.map((c) => c.id));
     this.characters.forEach((char) => {
@@ -146,11 +123,24 @@ export class GauntletEngine {
       }
     });
 
+    if (this.currentBoss) {
+      const targetBoss = this.bosses.find((b) => b.id === this.currentBoss.id);
+      if (targetBoss) {
+        targetBoss.markDefeated();
+      }
+    }
+
     this.battleLog.unshift({
+      id: `log_${Date.now()}`,
       type: 'VICTORY',
-      bossName: this.currentBoss?.name || 'Unknown Boss',
-      teamNames: activeMembers.map((c) => c.name),
-      time: new Date().toLocaleTimeString(),
+      bossName: this.currentBoss?.name || 'No Target Boss',
+      bossType: this.currentBoss?.type || null,
+      team: activeMembers.map((c) => ({
+        name: c.name,
+        element: c.element,
+        rarity: c.rarity,
+      })),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
     });
 
     this.currentTeam = [null, null, null, null];
@@ -159,13 +149,13 @@ export class GauntletEngine {
   }
 
   /**
-   * Reset Sesi Challenge:
-   * Mengembalikan semua karakter 'fallen' dan 'won' menjadi 'ready',
-   * tanpa mengubah status kepemilikan ('owned' / Tidak Punya).
+   * Reset Sesi Challenge (Permanen / Tanpa Undo):
+   * Mengembalikan semua karakter ('fallen'/'won' -> 'ready'), boss ('defeated' -> false),
+   * dan mengosongkan Battle Log tanpa menghapus daftar karakter 'Unowned'.
    */
   resetChallengeSession() {
-    this.pushSnapshot('Reset Sesi Challenge');
     this.characters.forEach((c) => c.resetChallengeStatus());
+    this.bosses.forEach((b) => b.resetChallengeStatus());
     this.currentTeam = [null, null, null, null];
     this.lockedSlots = [false, false, false, false];
     this.currentBoss = null;

@@ -5,6 +5,7 @@ import { Boss } from './models/Boss';
 import { StorageService } from './services/StorageService';
 import { GauntletEngine } from './services/GauntletEngine';
 import { TeamArena } from './components/TeamArena';
+import { BattleHistory } from './components/BattleHistory';
 import { RosterManager } from './components/RosterManager';
 import { JsonModal } from './components/JsonModal';
 import { Footer } from './components/Footer';
@@ -52,7 +53,7 @@ export default function App() {
             TEYVAT GAUNTLET
           </h1>
           <span className="hidden sm:inline-block font-mono-tech text-[11px] px-2 py-0.5 rounded bg-[#141822] text-slate-400 border border-[#232836]">
-            LOCAL RNG ENGINE
+            CO-OP CHALLENGE RNG
           </span>
         </div>
 
@@ -79,7 +80,6 @@ export default function App() {
           onRollBoth={() => executeSafely(() => engine.rollBoth())}
           onDefeat={() => executeSafely(() => engine.handleDefeat())}
           onVictory={() => executeSafely(() => engine.handleVictory())}
-          onUndo={() => executeSafely(() => engine.undo())}
           onToggleLock={(idx) =>
             executeSafely(() => {
               engine.lockedSlots[idx] = !engine.lockedSlots[idx];
@@ -97,6 +97,10 @@ export default function App() {
           }
         />
 
+        {/* Riwayat Pertarungan Menang & Kalah */}
+        <BattleHistory battleLog={engine.battleLog} />
+
+        {/* Manajemen Karakter & Boss */}
         <RosterManager
           characters={engine.characters}
           bosses={engine.bosses}
@@ -112,13 +116,25 @@ export default function App() {
               if (char) char.resetChallengeStatus();
             })
           }
-          onResetSession={() =>
-            executeSafely(() => engine.resetChallengeSession())
-          }
+          onResetSession={() => {
+            if (
+              window.confirm(
+                'Reset seluruh sesi Gauntlet? Semua karakter yang gugur/menang, boss yang dikalahkan, dan riwayat pertarungan akan direset permanen.'
+              )
+            ) {
+              executeSafely(() => engine.resetChallengeSession());
+            }
+          }}
           onToggleBossActive={(id) =>
             executeSafely(() => {
               const boss = engine.bosses.find((b) => b.id === id);
               if (boss) boss.toggleActive();
+            })
+          }
+          onReviveSingleBoss={(id) =>
+            executeSafely(() => {
+              const boss = engine.bosses.find((b) => b.id === id);
+              if (boss) boss.resetChallengeStatus();
             })
           }
           onAddCharacter={(name, element, rarity) =>
@@ -147,7 +163,7 @@ export default function App() {
         />
       </main>
 
-          <Footer />
+      <Footer />
 
       <JsonModal
         isOpen={isJsonModalOpen}
@@ -162,6 +178,7 @@ export default function App() {
           engine.bosses = bosses;
           engine.currentTeam = [null, null, null, null];
           engine.currentBoss = null;
+          engine.battleLog = [];
           syncAndRender();
         }}
       />

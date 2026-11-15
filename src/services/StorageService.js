@@ -70,6 +70,7 @@ export class StorageService {
             name: b.name,
             type: b.type === 'domain' ? 'domain' : 'map',
             active: b.active !== undefined ? b.active : true,
+            defeated: Boolean(b.defeated),
           })
       ),
     };

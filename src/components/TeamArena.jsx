@@ -8,12 +8,13 @@ export function TeamArena({
   onRollBoth,
   onDefeat,
   onVictory,
-  onUndo,
   onToggleLock,
   onChangeRarityFilter,
   onChangeBossFilter,
 }) {
   const hasTeam = engine.currentTeam.some(Boolean);
+  const victoryCount = engine.battleLog.filter((l) => l.type === 'VICTORY').length;
+  const defeatCount = engine.battleLog.filter((l) => l.type === 'DEFEAT').length;
 
   return (
     <section className="w-full border-b border-[#1E222D] bg-[#0D1017]">
@@ -88,14 +89,12 @@ export function TeamArena({
                     : 'bg-[#0A0C12] border-dashed border-[#222736]'
                 }`}
               >
-                {/* Subtle Elemental Top Ambient Light */}
                 {char && (
                   <div
                     className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${theme.glow}`}
                   />
                 )}
 
-                {/* Slot Header */}
                 <div className="relative z-10 flex items-center justify-between">
                   <span className="font-mono-tech text-[11px] tracking-widest text-slate-500">
                     PARTY 0{idx + 1}
@@ -116,7 +115,6 @@ export function TeamArena({
                   )}
                 </div>
 
-                {/* Character Details */}
                 {char ? (
                   <div className="relative z-10 mt-4">
                     <div className="flex items-center gap-2 mb-1.5">
@@ -203,14 +201,11 @@ export function TeamArena({
               <span className="font-mono-tech text-[11px] uppercase tracking-widest text-slate-400">
                 Gauntlet Resolution
               </span>
-              {engine.undoStack.length > 0 && (
-                <button
-                  onClick={onUndo}
-                  className="font-mono-tech text-xs text-slate-400 hover:text-white underline underline-offset-4"
-                >
-                  Undo ({engine.undoStack.length})
-                </button>
-              )}
+              <div className="flex items-center gap-2 font-mono-tech text-[11px]">
+                <span className="text-emerald-400">W: {victoryCount}</span>
+                <span className="text-slate-600">/</span>
+                <span className="text-rose-400">L: {defeatCount}</span>
+              </div>
             </div>
 
             {hasTeam ? (

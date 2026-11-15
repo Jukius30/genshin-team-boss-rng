@@ -8,6 +8,7 @@ export function RosterManager({
   onReviveSingle,
   onResetSession,
   onToggleBossActive,
+  onReviveSingleBoss,
   onAddCharacter,
   onAddBoss,
 }) {
@@ -49,7 +50,7 @@ export function RosterManager({
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 font-mono-tech text-xs">
+            <div className="flex flex-wrap items-center gap-2 font-mono-tech text-xs">
               <span className="px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
                 READY {stats.ready}
               </span>
@@ -216,10 +217,11 @@ export function RosterManager({
       <div className="xl:col-span-4 bg-[#0D1017] border border-[#1E222D] rounded-xl p-5 space-y-4 flex flex-col">
         <div className="pb-4 border-b border-[#1A1E28]">
           <h2 className="font-display text-lg font-bold text-white tracking-wide">
-            Encounter Registry ({bosses.filter((b) => b.active).length}/{bosses.length})
+            Encounter Registry ({bosses.filter((b) => b.active && !b.defeated).length}/
+            {bosses.filter((b) => b.active).length})
           </h2>
           <p className="text-xs text-slate-400">
-            Toggle active bosses included in the randomizer pool.
+            Boss yang sudah dikalahkan terkunci otomatis hingga Gauntlet di-reset.
           </p>
         </div>
 
@@ -256,28 +258,51 @@ export function RosterManager({
         </form>
 
         <div className="space-y-1.5 max-h-[540px] overflow-y-auto pr-1 flex-1">
-          {bosses.map((boss) => (
-            <div
-              key={boss.id}
-              onClick={() => onToggleBossActive(boss.id)}
-              className={`cursor-pointer border rounded-lg px-3 py-2.5 text-xs flex items-center justify-between gap-2 transition select-none ${
-                boss.active
-                  ? 'bg-[#121620] border-[#222736] text-slate-200 hover:border-slate-500'
-                  : 'bg-[#090B10] border-[#161922] text-slate-600 line-through'
-              }`}
-            >
-              <span className="truncate font-medium">{boss.name}</span>
-              <span
-                className={`font-mono-tech text-[10px] uppercase px-2 py-0.5 rounded border shrink-0 ${
-                  boss.type === 'domain'
-                    ? 'bg-purple-500/10 text-purple-300 border-purple-500/25'
-                    : 'bg-sky-500/10 text-sky-300 border-sky-500/25'
-                }`}
+          {bosses.map((boss) => {
+            let bossStyle =
+              'bg-[#121620] border-[#222736] text-slate-200 hover:border-slate-500';
+            if (!boss.active) {
+              bossStyle =
+                'bg-[#090B10] border-[#161922] text-slate-600 line-through opacity-55';
+            } else if (boss.defeated) {
+              bossStyle =
+                'bg-[#D4AF37]/10 border-[#D4AF37]/40 text-[#F5D77F]';
+            }
+
+            return (
+              <div
+                key={boss.id}
+                onClick={() => onToggleBossActive(boss.id)}
+                className={`cursor-pointer border rounded-lg px-3 py-2.5 text-xs flex items-center justify-between gap-2 transition select-none ${bossStyle}`}
               >
-                {boss.type}
-              </span>
-            </div>
-          ))}
+                <span className="truncate font-medium">{boss.name}</span>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {boss.active && boss.defeated && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onReviveSingleBoss(boss.id);
+                      }}
+                      className="font-mono-tech text-[10px] px-1.5 py-0.5 rounded bg-[#D4AF37]/20 text-[#F5D77F] hover:bg-[#D4AF37]/35"
+                    >
+                      CLEARED • UNLOCK
+                    </button>
+                  )}
+
+                  <span
+                    className={`font-mono-tech text-[10px] uppercase px-2 py-0.5 rounded border ${
+                      boss.type === 'domain'
+                        ? 'bg-purple-500/10 text-purple-300 border-purple-500/25'
+                        : 'bg-sky-500/10 text-sky-300 border-sky-500/25'
+                    }`}
+                  >
+                    {boss.type}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
